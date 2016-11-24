@@ -5,8 +5,10 @@ import com.winthier.minilink.lobby.LobbyServer;
 import com.winthier.minilink.sql.GameTable;
 import com.winthier.minilink.sql.PlayerTable;
 import com.winthier.minilink.util.Players;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -33,11 +36,28 @@ class DefaultCommand extends AbstractCommand
     final String gameKey;
     final Random random = new Random(System.currentTimeMillis());
     String getKey() { return gameKey.toLowerCase(); }
+    Map<String, MyMap> maps = null;
+    long lastLoaded = 0;
     
     static MinilinkPlugin getMinilink() {
         Plugin pl = Bukkit.getServer().getPluginManager().getPlugin("Minilink");
         if (pl instanceof MinilinkPlugin) return (MinilinkPlugin)pl;
         return null;
+    }
+
+    Map<String, MyMap> getMaps() {
+        if (maps == null || lastLoaded + 1000*60*10 < System.currentTimeMillis()) {
+            lastLoaded = System.currentTimeMillis();
+            plugin.reloadConfig();
+            maps = new HashMap<>();
+            ConfigurationSection mapsConfig = getConfig().getConfigurationSection("maps");
+            for (String key: mapsConfig.getKeys(false)) {
+                ConfigurationSection mapConfig = mapsConfig.getConfigurationSection(key);
+                MyMap map = new MyMap(key, mapConfig);
+                maps.put(key, map);
+            }
+        }
+        return maps;
     }
 
     static List<GameTable> getOpenGames(String... keys)
@@ -60,9 +80,9 @@ class DefaultCommand extends AbstractCommand
             List<Object> message = new ArrayList<>();
             message.add(Msg.format("&b \u2022 "));
             if (player.hasPermission(getKey() + ".join")) {
-                message.add(button("&r[&6Join&r]", "&7Try to join this game", "/"+getKey()+" join " + game.getUuid()));
+                message.add(Msg.button("&r[&6Join&r]", "&7Try to join this game", "/"+getKey()+" join " + game.getUuid()));
                 message.add(" ");
-                message.add(button("&r[&3Spec&r]", "&7Spectate this game", "/"+getKey()+" spectate " + game.getUuid()));
+                message.add(Msg.button("&r[&3Spec&r]", "&7Spectate this game", "/"+getKey()+" spectate " + game.getUuid()));
             }
             for (PlayerTable playerTable : game.getPlayers()) {
                 message.add(" ");
@@ -103,15 +123,11 @@ class DefaultCommand extends AbstractCommand
         config.set("Game", getGameKey());
         config.set("MaxPlayers", maxPlayers);
         config.set("ShouldAnnounce", true);
-        if (getConfig().isSet("maps")) {
-            ConfigurationSection mapsConfig = getConfig().getConfigurationSection("maps");
-            List<String> keys = new ArrayList<>(mapsConfig.getKeys(false));
-            String key = keys.get(random.nextInt(keys.size()));
-            ConfigurationSection mapConfig = mapsConfig.getConfigurationSection(key);
-            String mapId = mapConfig.getString("MapID");
-            String mapPath = mapConfig.getString("MapPath", mapId);
-            config.set("MapID", mapId);
-            config.set("MapPath", mapPath);
+        List<MyMap> mapList = new ArrayList<>(getMaps().values());
+        if (!mapList.isEmpty()) {
+            MyMap map = mapList.get(random.nextInt(mapList.size()));
+            config.set("MapID", map.mapID);
+            config.set("MapPath", map.mapPath);
         }
         LobbyServer.getInstance().joinOrCreateGame(getGameKey(), config, Players.getPlayerInfos(player));
     }
@@ -119,14 +135,14 @@ class DefaultCommand extends AbstractCommand
     void launchMap(Player player, String key)
     {
         if (!player.hasPermission(getKey() + ".create")) return;
-        ConfigurationSection mapConfig = getConfig().getConfigurationSection("maps." + key);
-        if (mapConfig == null) return;
+        MyMap map = getMaps().get(key);
+        if (map == null) return;
         ConfigurationSection config = new MemoryConfiguration();
         int maxPlayers = getConfig().getInt("MaxPlayers", 32);
         config.set("Game", getGameKey());
         config.set("MaxPlayers", maxPlayers);
-        config.set("MapID", mapConfig.getString("MapID"));
-        config.set("MapPath", mapConfig.getString("MapPath"));
+        config.set("MapID", map.mapID);
+        config.set("MapPath", map.mapPath);
         config.set("ShouldAnnounce", true);
         LobbyServer.getInstance().createGame(getGameKey(), config, Players.getPlayerInfos(player));
     }
@@ -167,10 +183,10 @@ class DefaultCommand extends AbstractCommand
         if (player.hasPermission(getKey() + ".join")) {
             List<Object> buttons = new ArrayList<>();
             buttons.add(Msg.format(" &3Click here to "));
-            buttons.add(button("&r[&6&lPlay&r]", "&7Auto join a game", "/"+getKey()+" join"));
+            buttons.add(Msg.button("&r[&6&lPlay&r]", "&7Auto join a game", "/"+getKey()+" join"));
             if (player.hasPermission(getKey() + ".maps") && getConfig().isSet("maps")) {
                 buttons.add(Msg.format(" &3or select a "));
-                buttons.add(button("&r[&3Map&r]", "&7Select a map", "/"+getKey()+" maps"));
+                buttons.add(Msg.button("&r[&3Map&r]", "&7Select a map", "/"+getKey()+" maps"));
             }
             Msg.raw(player, buttons);
         }
@@ -180,28 +196,18 @@ class DefaultCommand extends AbstractCommand
     void showMaps(Player player) {
         Msg.send(player, "");
         Msg.send(player, "&b&l%s Maps &7&o(Click to play)", getTitle());
-        ConfigurationSection mapsConfig = getConfig().getConfigurationSection("maps");
         List<Object> messages = new ArrayList<>();
-        for (String key : mapsConfig.getKeys(false)) {
+        List<MyMap> mapList = new ArrayList<>(getMaps().values());
+        Collections.sort(mapList, MyMap.NAME_COMPARATOR);
+        for (MyMap map: mapList) {
             messages.add(" ");
-            ConfigurationSection mapConfig = mapsConfig.getConfigurationSection(key);
-            String mapId = mapConfig.getString("MapID");
-            String displayName = mapConfig.getString("DisplayName", mapId);
-            String[] tokens = displayName.split(" ");
-            StringBuilder sb = new StringBuilder("&6").append(tokens[0]);
-            for (int i = 1; i < tokens.length; ++i) sb.append(" &6").append(tokens[i]);
-            displayName = sb.toString();
-            List<String> authorList = mapConfig.getStringList("Authors");
-            sb = new StringBuilder("&6").append(displayName);
-            if (!authorList.isEmpty()) {
-                sb.append("\n&7Made by: ");
-                sb.append(authorList.get(0));
-                for (int i = 1; i < authorList.size(); ++i) sb.append(", ").append(authorList.get(i));
-            } else {
-                sb.append("\n&7Made by Winthier");
-            }
-            String description = Msg.wrap(sb.toString(), 32, "\n&7");
-            messages.add(button("&r[&6"+displayName+"&r]", description, "/"+getKey()+" maps "+key));
+            messages.add(Msg.button(ChatColor.GOLD,
+                                    "&r[&6"+map.displayName+"&r]",
+                                    "&6"+map.displayName+"\n" +
+                                    Msg.wrap("&7Made by &r" + Msg.fold(map.authors, ", "), 32, "\n") + "\n" +
+                                    Msg.wrap(map.description, 32, "\n") + "\n" +
+                                    "&7Click to play this map.",
+                                    "/"+getKey()+" maps " + map.key));
         }
         Msg.raw(player, messages);
         Msg.send(player, "");
@@ -262,33 +268,49 @@ class DefaultCommand extends AbstractCommand
             testMap(player, players);
             Msg.send(player, "&bPreparing test map...");
         } else if ("reload".equals(cmd) && player.hasPermission(getKey() + ".reload")) {
-            plugin.reloadConfig();
+            maps = null;
             Msg.send(player, "&eConfig reloaded");
         } else {
             return false;
         }
         return true;
     }
+}
 
-    Object button(String chat, String tooltip, String command)
-    {
-        Map<String, Object> map = new HashMap<>();
-        // map.put("text", Msg.format(chat));
-        map.put("text", "");
-        List<Object> extraList = new ArrayList<>();
-        for (String token : Msg.format(chat).split(" ")) {
-            if (!extraList.isEmpty()) extraList.add(" ");
-            extraList.add(token);
+class MyMap {
+    final static Comparator<MyMap> NAME_COMPARATOR = new Comparator<MyMap>() {
+        @Override public int compare(MyMap a, MyMap b) {
+            return a.displayName.compareTo(b.displayName);
         }
-        map.put("extra", extraList);
-        Map<String, Object> map2 = new HashMap<>();
-        map.put("clickEvent", map2);
-        map2.put("action", "run_command");
-        map2.put("value", command);
-        map2 = new HashMap<>();
-        map.put("hoverEvent", map2);
-        map2.put("action", "show_text");
-        map2.put("value", Msg.format(tooltip));
-        return map;
+    };
+    final String key, mapID, mapPath, displayName, permission;
+    final List<String> authors;
+    final boolean debug;
+    final String description;
+
+    MyMap(String key, ConfigurationSection config) {
+        this.key = key;
+        this.mapID = config.getString("MapID");
+        this.mapPath = config.getString("MapPath", "MyMap/" + mapID);
+        String displayName = config.getString("DisplayName", this.mapID);
+        this.permission = config.getString("Permission", null);
+        this.debug = config.getBoolean("Debug", false);
+        List<String> authors = config.getStringList("Authors");
+        String description = config.getString("Description", "");
+        File file = new File(this.mapPath, "config.yml");
+        YamlConfiguration config2 = YamlConfiguration.loadConfiguration(file);
+        description = config2.getString("user.Description", description);
+        displayName = config2.getString("user.Name", displayName);
+        if (config2.isSet("user.Authors")) {
+            authors = config2.getStringList("user.Authors");
+        }
+        this.description = description;
+        this.displayName = displayName;
+        this.authors = authors;
+    }
+
+    boolean hasPermission(Player player) {
+        if (permission == null) return true;
+        return player.hasPermission(permission);
     }
 }
