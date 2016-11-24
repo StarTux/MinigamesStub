@@ -199,6 +199,7 @@ class DefaultCommand extends AbstractCommand
         List<Object> messages = new ArrayList<>();
         List<MyMap> mapList = new ArrayList<>(getMaps().values());
         Collections.sort(mapList, MyMap.NAME_COMPARATOR);
+        int count = 0;
         for (MyMap map: mapList) {
             messages.add(" ");
             messages.add(Msg.button(ChatColor.GOLD,
@@ -208,8 +209,16 @@ class DefaultCommand extends AbstractCommand
                                     Msg.wrap(map.description, 32, "\n") + "\n" +
                                     "&7Click to play this map.",
                                     "/"+getKey()+" maps " + map.key));
+            count += 1;
+            if (count >= 3) {
+                Msg.raw(player, messages);
+                messages.clear();
+                count = 0;
+            }
         }
-        Msg.raw(player, messages);
+        if (count > 0) {
+            Msg.raw(player, messages);
+        }
         Msg.send(player, "");
     }
     
