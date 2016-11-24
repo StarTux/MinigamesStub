@@ -1,0 +1,175 @@
+name: MinigamesStub
+description: Access minigames from other servers
+author: StarTux
+version: 0.1
+main: com.winthier.minigames_stub.MinigamesStubPlugin
+depend: [Minilink]
+commands:
+#  minigames:
+#    aliases: [ mg ]
+#    usage: /<command>
+#    permission: minigames-stub.minigames
+  adventure:
+    aliases: [ adv, advent, adventures ]
+    usage: /<command> <adventure> [solo|party]
+    description: Play an adventure map
+    permission: adventure.adventure
+  mobarena:
+    aliases: [ ma ]
+    description: Join Mob Arena
+    permission: mobarena.mobarena
+    usage: 'Usage: /ma join|spec'
+  enderball:
+    aliases: [ eb, soccer ]
+    description: Play Ender Ball
+    permission: enderball.enderball
+    usage: 'Usage: /EnderBall Join'
+  survivalgames:
+    aliases: [ sg, hg, hungergames ]
+    description: Play Survival Games
+    permission: survivalgames.survivalgames
+    usage: 'Usage: /sg join|spectate'
+  colorfall:
+    aliases: [ cf ]
+    description: Play Survival Games
+    permission: colorfall.colorfall
+    usage: 'Usage: /cf join|spectate'
+  spleef:
+    description: Play Spleef
+    permission: spleef.spleef
+    usage: 'Usage: /spleef join|spectate'
+  vertigo:
+    description: Play Vertigo
+    permission: vertigo.vertigo
+    usage: 'Usage: /vertigo join|spectate'
+  pvp:
+    description: Play PvP Arena
+    permission: pvp.pvp
+    usage: 'Usage: /pvp join|spectate'
+
+permissions:
+  minigames-stub.minigames:
+    description: Use the /Minigames command
+    default: op
+
+  adventure.adventure:
+    description: Use the /Adventure command
+    default: op
+  adventure.admin:
+    description: Perform admin operations via /adventure
+    default: op
+  adventure.test:
+    description: Use current world for testing
+    default: false
+
+  mobarena.mobarena:
+    description: Use the /MobArena command
+    default: op
+  mobarena.join:
+    description: Join a game
+    default: op
+  mobarena.create:
+    description: Create a new game
+    default: op
+  mobarena.reload:
+    description: Reload the config
+    default: op
+  mobarena.test:
+    description: Use current world for testing
+    default: false
+
+  enderball.enderball:
+    description: Use the /EnderBall command
+    default: op
+  enderball.join:
+    description: Join a game
+    default: op
+  enderball.create:
+    description: Create a new game
+    default: op
+  enderball.reload:
+    description: Reload the config
+    default: op
+  enderball.test:
+    description: Use current world for testing
+    default: false
+
+  survivalgames.survivalgames:
+    description: Use the /SurvivalGames command
+    default: op
+  survivalgames.join:
+    description: Join a game
+    default: op
+  survivalgames.create:
+    description: Create a new game
+    default: op
+  survivalgames.reload:
+    description: Reload the config
+    default: op
+  survivalgames.test:
+    description: Use current world for testing
+    default: false
+
+  colorfall.colorfall:
+    description: Use the /Colorfall command
+    default: op
+  colorfall.join:
+    description: Join a game
+    default: op
+  colorfall.create:
+    description: Create a new game
+    default: op
+  colorfall.reload:
+    description: Reload the config
+    default: op
+  colorfall.test:
+    description: Use current world for testing
+    default: false
+
+  spleef.spleef:
+    description: Use the /Spleef command
+    default: op
+  spleef.join:
+    description: Join a game
+    default: op
+  spleef.create:
+    description: Create a new game
+    default: op
+  spleef.reload:
+    description: Reload the config
+    default: op
+  spleef.test:
+    description: Use current world for testing
+    default: false
+
+  vertigo.vertigo:
+    description: Use the /Vertigo command
+    default: op
+  vertigo.join:
+    description: Join a game
+    default: op
+  vertigo.create:
+    description: Create a new game
+    default: op
+  vertigo.reload:
+    description: Reload the config
+    default: op
+  vertigo.test:
+    description: Use current world for testing
+    default: false
+
+  pvp.pvp:
+    description: Use the /PvP command
+    default: op
+  pvp.join:
+    description: Join a game
+    default: op
+  pvp.create:
+    description: Create a new game
+    default: op
+  pvp.reload:
+    description: Reload the config
+    default: op
+  pvp.test:
+    description: Use current world for testing
+    default: false

@@ -1,0 +1,22 @@
+adventure:
+  christmas:
+    MapID: Christmas
+    DisplayName: Christmas
+    Permission: adventure.adventure
+  test:
+    MapID: Test
+    DisplayName: Test
+    Permission: adventure.admin
+mobarena:
+  Description: |-
+    Mob Arena is a cooperative multiplayer game where you face waves of vile mobs, challenge powerful bosses, and take epic rewards back to survival.
+enderball:
+  Description: |-
+    Ender Ball is a competitive soccer game where you try to score by kicking the dragon egg into the opposing team's goal.
+survivalgames:
+  maps:
+    default:
+      MapID: Default
+      MapPath: /dev/null 
+  Description: |-
+    Survival Games is a competitive PvP game where you collect loot from chests and try to stay alive, while defeating your enemies.
