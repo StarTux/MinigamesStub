@@ -127,13 +127,21 @@ public class AdventureCommand extends AbstractCommand
                             " ",
                             Msg.button(ChatColor.WHITE, "[  ]", Msg.wrap("You have yet to beat this map.", 32, "\n"), null),
                             " ",
-                            Msg.button(ChatColor.GRAY, adventure.displayName, Msg.wrap("Made by " + Msg.fold(adventure.authors, ", ") + ". Click here for more info.", 32, "\n"), cmd));
+                            Msg.button(ChatColor.GRAY, adventure.displayName,
+                                       Msg.wrap("&7Made by &r" + Msg.fold(adventure.authors, ", "), 32, "\n")  + ".\n" +
+                                       Msg.wrap(adventure.description, 32, "\n") + "\n" +
+                                       Msg.wrap("&7Click here for more info.", 32, "\n"),
+                                       cmd));
                 } else {
                     Msg.raw(player,
                             " ",
                             Msg.button(ChatColor.GREEN, "&r[&a\u2714&r]", Msg.wrap("You beat the " + adventure.displayName + " adventure map. Wanna play it again?", 32, "\n"), null),
                             " ",
-                            Msg.button(ChatColor.WHITE, adventure.displayName, Msg.wrap("Made by " + Msg.fold(adventure.authors, ", ") + ". Click here for more info.", 32, "\n"), cmd));
+                            Msg.button(ChatColor.GRAY, adventure.displayName,
+                                       Msg.wrap("&7Made by &r" + Msg.fold(adventure.authors, ", "), 32, "\n")  + "&7.\n" +
+                                       Msg.wrap(adventure.description, 32, "\n") + "\n" +
+                                       Msg.wrap("&7Click here for more info.", 32, "\n"),
+                                       cmd));
                 }
                 didBeatPrevious = isBeat;
             }
