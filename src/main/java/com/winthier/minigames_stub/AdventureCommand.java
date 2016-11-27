@@ -38,8 +38,7 @@ public class AdventureCommand extends AbstractCommand
     long lastLoaded = 0;
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
-    {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (adventures.isEmpty() || lastLoaded + 1000*60*10 < System.currentTimeMillis()) reload();
         Player player = sender instanceof Player ? (Player)sender : null;
         if (player == null) {
@@ -240,7 +239,7 @@ public class AdventureCommand extends AbstractCommand
         config.set("MapPath", adventure.mapPath);
         config.set("Solo", solo);
         config.set("Debug", adventure.debug);
-        config.set("ShouldAnnounce", false);
+        config.set("ShouldAnnounce", !solo);
         List<PlayerInfo> infos = new ArrayList<>();
         infos.add(PlayerInfo.fromPlayer(player));
         MinilinkPlugin minilink = (MinilinkPlugin)plugin.getServer().getPluginManager().getPlugin("Minilink");
