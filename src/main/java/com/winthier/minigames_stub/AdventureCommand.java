@@ -1,11 +1,12 @@
 package com.winthier.minigames_stub;
 
-import com.avaje.ebean.SqlRow;
 import com.winthier.minilink.MinilinkPlugin;
 import com.winthier.minilink.lobby.LobbyServer;
 import com.winthier.minilink.util.PlayerInfo;
 import com.winthier.minilink.util.Players;
 import java.io.File;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,10 +27,8 @@ import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-@RequiredArgsConstructor
-@Getter
-public class AdventureCommand extends AbstractCommand
-{
+@Getter @RequiredArgsConstructor
+public class AdventureCommand extends AbstractCommand {
     final MinigamesStubPlugin plugin;
     final Map<String, Adventure> adventures = new LinkedHashMap<>();
     final List<String> categories = new ArrayList<>();
@@ -249,7 +248,7 @@ public class AdventureCommand extends AbstractCommand
         } else {
             lobbyServer.joinOrCreateGame(gameKey, config, infos);
         }
-    }    
+    }
 
     void testMap(Player player, List<Player> players)
     {
@@ -269,24 +268,36 @@ public class AdventureCommand extends AbstractCommand
     Set<String> findMapsBeatBy(Player player) {
         MinilinkPlugin minilink = (MinilinkPlugin)plugin.getServer().getPluginManager().getPlugin("Minilink");
         Set<String> result = new HashSet<>();
-        for (SqlRow row: minilink.getDatabase().createSqlQuery("select map_id from Minigames.Adventure where finished = 1 and player_uuid = '" + player.getUniqueId() + "' group by map_id").findList()) {
-            result.add(row.getString("map_id"));
+        try (ResultSet row = minilink.database.getDb().executeQuery("select map_id from Minigames.Adventure where finished = 1 and player_uuid = '" + player.getUniqueId() + "' group by map_id")) {
+            while (row.next()) {
+                result.add(row.getString("map_id"));
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
         }
         return result;
     }
 
     String findCompletionTime(Player player, Adventure adventure) {
         MinilinkPlugin minilink = (MinilinkPlugin)plugin.getServer().getPluginManager().getPlugin("Minilink");
-        SqlRow row = minilink.getDatabase().createSqlQuery("select timediff(end_time,start_time) time from Minigames.Adventure where player_uuid = '" + player.getUniqueId() + "' and finished = 1 and map_id = '" + adventure.mapID + "' order by time asc limit 1").findUnique();
-        if (row == null) return "00:00:00";
-        return row.getString("time");
+        try (ResultSet row = minilink.database.getDb().executeQuery("select timediff(end_time,start_time) time from Minigames.Adventure where player_uuid = '" + player.getUniqueId() + "' and finished = 1 and map_id = '" + adventure.mapID + "' order by time asc limit 1")) {
+            if (!row.next()) return "00:00:00";
+            return row.getString("time");
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+            return "00:00:00";
+        }
     }
 
     List<Highscore> findHighscoreList(Adventure adventure, int limit) {
         List<Highscore> result = new ArrayList<>();
         MinilinkPlugin minilink = (MinilinkPlugin)plugin.getServer().getPluginManager().getPlugin("Minilink");
-        for (SqlRow row: minilink.getDatabase().createSqlQuery("select player_name name, timediff(end_time,start_time) time from Minigames.Adventure where finished = 1 and map_id = '" + adventure.mapID + "' group by player_uuid order by time asc limit " + limit).findList()) {
-            result.add(new Highscore(row.getString("name"), row.getString("time")));
+        try (ResultSet row = minilink.database.getDb().executeQuery("select player_name name, timediff(end_time,start_time) time from Minigames.Adventure where finished = 1 and map_id = '" + adventure.mapID + "' group by player_uuid order by time asc limit " + limit)) {
+            while (row.next()) {
+                result.add(new Highscore(row.getString("name"), row.getString("time")));
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
         }
         return result;
     }
